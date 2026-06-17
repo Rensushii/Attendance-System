@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd attendance-dashboard && npm run build",
+  "outputDirectory": "attendance-dashboard/.next"
+}
