@@ -1,14 +1,21 @@
 import serial
 import sqlite3
-import re
 import sys
+from supabase import create_client, Client
 
 # ---------- Configuration ----------
-SERIAL_PORT = 'COM3'      # Windows example: COM3; on Linux/Mac: /dev/ttyUSB0
+SERIAL_PORT = 'COM3'        # change as needed
 BAUD_RATE = 115200
 DB_FILE = 'attendance.db'
 
-# ---------- Database setup ----------
+# Supabase credentials (replace with yours)
+SUPABASE_URL = "https://lgrwdvkdhybcqcbctoje.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncndkdmtkaHliY3FjYmN0b2plIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTY0NDcxNSwiZXhwIjoyMDk3MjIwNzE1fQ.Ur5i2zaoknpXdueRr9qMURqQ8lEKeSryRmfzFY5kJvc"  # anon key
+
+# ---------- Init Supabase ----------
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# ---------- Local database setup ----------
 conn = sqlite3.connect(DB_FILE)
 cursor = conn.cursor()
 cursor.execute('''
@@ -23,19 +30,31 @@ cursor.execute('''
 conn.commit()
 
 def is_blacklisted(mac):
-    """Return True if MAC already exists in DB."""
     cursor.execute("SELECT 1 FROM registrations WHERE mac = ?", (mac,))
     return cursor.fetchone() is not None
 
 def register_user(name, email, mac):
-    """Insert a new registration. Returns True if successful, False if duplicate."""
+    # 1. Insert locally
     try:
         cursor.execute("INSERT INTO registrations (name, email, mac) VALUES (?, ?, ?)",
                        (name, email, mac))
         conn.commit()
-        return True
     except sqlite3.IntegrityError:
         return False  # duplicate MAC
+
+    # 2. Sync to Supabase
+    try:
+        supabase.table("registrations").insert({
+            "name": name,
+            "email": email,
+            "mac": mac
+        }).execute()
+        print(f"  -> Synced to cloud: {name}, {email}, {mac}")
+    except Exception as e:
+        # Already exists or network error – log but continue
+        print(f"  -> Supabase insert error: {e}")
+
+    return True
 
 # ---------- Serial communication ----------
 try:
@@ -45,13 +64,12 @@ except Exception as e:
     print(f"Serial error: {e}")
     sys.exit(1)
 
-# Wait for ESP32 ready signal
+# Wait for ESP32 ready
 while True:
     line = ser.readline().decode('utf-8', errors='ignore').strip()
     if line == "READY":
         print("ESP32 is ready.")
         break
-    # could print other debug lines if needed
 
 print("Listening for commands...")
 
@@ -62,7 +80,6 @@ try:
             continue
         print(f"Received: {line}")
 
-        # Format: CHECK_MAC:AA:BB:CC:DD:EE:FF
         if line.startswith("CHECK_MAC:"):
             mac = line[len("CHECK_MAC:"):].strip().upper()
             if is_blacklisted(mac):
@@ -72,19 +89,17 @@ try:
                 ser.write(b"ALLOW\n")
                 print(f"  -> ALLOW")
 
-        # Format: REGISTER:name,email,MAC
         elif line.startswith("REGISTER:"):
             data = line[len("REGISTER:"):]
             try:
-                # split by commas, but be careful with commas in name/email (unlikely)
                 parts = data.split(',')
                 if len(parts) < 3:
                     ser.write(b"ERROR\n")
                     continue
-                name = ','.join(parts[:-2])  # in case name contains commas
+                name = ','.join(parts[:-2])
                 email = parts[-2].strip()
                 mac = parts[-1].strip().upper()
-                
+
                 if register_user(name, email, mac):
                     ser.write(b"REGISTERED\n")
                     print(f"  -> Registered: {name}, {email}, {mac}")
@@ -95,7 +110,6 @@ try:
                 ser.write(b"ERROR\n")
                 print(f"  -> Parse error: {e}")
 
-        # Ignore any other lines (debug prints from ESP32)
 except KeyboardInterrupt:
     print("Shutting down.")
 finally:
