@@ -67,6 +67,16 @@ export default function Home() {
           )}
         </tbody>
       </table>
+
+      {/* Download button */}
+      <div className="mt-6 text-center">
+        <a
+          href="/attendance-laptop.zip"
+          className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+        >
+          💻 Download Laptop Service
+        </a>
+      </div>
     </main>
   );
 }

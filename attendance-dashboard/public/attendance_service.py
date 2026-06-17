@@ -2,17 +2,19 @@ import serial
 import sqlite3
 import time
 import logging
+import os
 import sys
 from supabase import create_client, Client
+from serial.tools import list_ports
 
 # ---------- CONFIGURATION ----------
-SERIAL_PORT = 'COM3'        # Change to your ESP32's COM port
-BAUD_RATE = 115200
-DB_FILE = 'attendance.db'
-LOG_FILE = 'attendance_service.log'
+# Use relative paths: all files go in the same folder as the script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, 'attendance.db')
+LOG_FILE = os.path.join(BASE_DIR, 'attendance_service.log')
 
 SUPABASE_URL = "https://lgrwdvkdhybcqcbctoje.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncndkdmtkaHliY3FjYmN0b2plIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTY0NDcxNSwiZXhwIjoyMDk3MjIwNzE1fQ.Ur5i2zaoknpXdueRr9qMURqQ8lEKeSryRmfzFY5kJvc"  # service_role key
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  # your service_role key
 
 # ---------- LOGGING SETUP ----------
 logging.basicConfig(
@@ -64,13 +66,30 @@ def register_user(name, email, mac):
 
     return True
 
+def find_esp32_port():
+    """Auto-detect the ESP32 USB serial port."""
+    ports = list_ports.comports()
+    for port in ports:
+        # ESP32 usually has 'CP210x' or 'CH340' in its description
+        if 'CP210x' in port.description or 'CH340' in port.description or 'USB Serial' in port.description:
+            return port.device
+    # fallback: return first available port (or let user set manually if none)
+    if ports:
+        return ports[0].device
+    return None
+
 def process_serial():
-    """Try to open the serial port and handle communication."""
     while True:
+        port = find_esp32_port()
+        if not port:
+            log.warning("No serial port found. Retrying in 5 seconds...")
+            time.sleep(5)
+            continue
+
         try:
-            log.info(f"Attempting to open {SERIAL_PORT}...")
-            ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-            log.info(f"Connected to {SERIAL_PORT}. Waiting for ESP32 READY...")
+            log.info(f"Attempting to open {port}...")
+            ser = serial.Serial(port, 115200, timeout=1)
+            log.info(f"Connected to {port}. Waiting for ESP32 READY...")
 
             # Wait for READY signal
             start_time = time.time()
@@ -79,12 +98,11 @@ def process_serial():
                 if line == "READY":
                     log.info("ESP32 is ready.")
                     break
-                if time.time() - start_time > 10:  # 10s timeout
-                    log.warning("ESP32 not sending READY, retrying connection...")
+                if time.time() - start_time > 10:
+                    log.warning("ESP32 not sending READY, retrying...")
                     ser.close()
                     raise serial.SerialException("No READY received")
 
-            # Main command loop
             while True:
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
                 if not line:
