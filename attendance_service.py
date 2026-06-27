@@ -14,7 +14,7 @@ DB_FILE = os.path.join(BASE_DIR, 'attendance.db')
 LOG_FILE = os.path.join(BASE_DIR, 'attendance_service.log')
 
 SUPABASE_URL = "https://lgrwdvkdhybcqcbctoje.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  # your service_role key
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxncndkdmtkaHliY3FjYmN0b2plIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTY0NDcxNSwiZXhwIjoyMDk3MjIwNzE1fQ.Ur5i2zaoknpXdueRr9qMURqQ8lEKeSryRmfzFY5kJvc"  # your service_role key
 
 # ---------- LOGGING SETUP ----------
 logging.basicConfig(
