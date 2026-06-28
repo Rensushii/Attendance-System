@@ -7,7 +7,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <span className="text-2xl">📋</span>
             <span className="text-xl font-bold text-gray-900">
-              RenTech Attendance
+              RenTech Attendance (for demo, will apply admin login later)
             </span>
           </div>
           <div className="flex items-center gap-4">
