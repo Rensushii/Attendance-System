@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -21,6 +21,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
+  // Search & filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchType, setSearchType] = useState<"name" | "email">("name");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
   const fetchData = async () => {
     const { data, error } = await supabase
       .from("registrations")
@@ -38,6 +44,45 @@ export default function Dashboard() {
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Filtered data based on search and time range
+  const filteredData = useMemo(() => {
+    let result = registrations;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((reg) => {
+        const field = searchType === "name" ? reg.name : reg.email;
+        return field.toLowerCase().includes(query);
+      });
+    }
+
+    // Time filter
+    if (startTime || endTime) {
+      result = result.filter((reg) => {
+        const regDate = new Date(reg.created_at).getTime();
+        if (startTime && regDate < new Date(startTime).getTime()) return false;
+        if (endTime && regDate > new Date(endTime).getTime()) return false;
+        return true;
+      });
+    }
+
+    return result;
+  }, [registrations, searchQuery, searchType, startTime, endTime]);
+
+  // Today count (from full data)
+  const todayCount = useMemo(() => {
+    const today = new Date();
+    return registrations.filter((r) => {
+      const regDate = new Date(r.created_at);
+      return (
+        regDate.getDate() === today.getDate() &&
+        regDate.getMonth() === today.getMonth() &&
+        regDate.getFullYear() === today.getFullYear()
+      );
+    }).length;
+  }, [registrations]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
@@ -72,7 +117,7 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
+        {/* Stats (based on all data) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <div className="bg-gray-800 rounded-xl border border-gray-700/50 p-5">
             <p className="text-sm font-medium text-gray-400">
@@ -85,17 +130,7 @@ export default function Dashboard() {
           <div className="bg-gray-800 rounded-xl border border-gray-700/50 p-5">
             <p className="text-sm font-medium text-gray-400">Today</p>
             <p className="text-3xl font-bold text-white mt-1">
-              {loading
-                ? "—"
-                : registrations.filter((r) => {
-                    const today = new Date();
-                    const regDate = new Date(r.created_at);
-                    return (
-                      regDate.getDate() === today.getDate() &&
-                      regDate.getMonth() === today.getMonth() &&
-                      regDate.getFullYear() === today.getFullYear()
-                    );
-                  }).length}
+              {loading ? "—" : todayCount}
             </p>
           </div>
           <div className="bg-gray-800 rounded-xl border border-gray-700/50 p-5">
@@ -110,6 +145,86 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Search and filter bar */}
+        <div className="mb-6 bg-gray-800 rounded-xl border border-gray-700/50 p-4 sm:p-6">
+          <h3 className="text-sm font-semibold text-gray-300 mb-4">
+            🔍 Search & Filter
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search type dropdown */}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Search by
+              </label>
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value as "name" | "email")}
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              >
+                <option value="name">Name</option>
+                <option value="email">Email</option>
+              </select>
+            </div>
+
+            {/* Search input */}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                {searchType === "name" ? "Name" : "Email"}
+              </label>
+              <input
+                type="text"
+                placeholder={searchType === "name" ? "e.g. John" : "e.g. john@example.com"}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Start time */}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                Start Time
+              </label>
+              <input
+                type="datetime-local"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            {/* End time */}
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">
+                End Time
+              </label>
+              <input
+                type="datetime-local"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Show active filter count */}
+          {(searchQuery || startTime || endTime) && (
+            <div className="mt-4 text-sm text-gray-400 flex items-center gap-2">
+              <span>🔹 Showing {filteredData.length} of {registrations.length} registrations</span>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setStartTime("");
+                  setEndTime("");
+                }}
+                className="text-indigo-400 hover:text-indigo-300 underline text-xs"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Table */}
         <div className="bg-gray-800 rounded-xl border border-gray-700/50 overflow-hidden">
           <div className="px-4 py-5 sm:px-6 border-b border-gray-700">
@@ -117,7 +232,9 @@ export default function Dashboard() {
               Registered Attendees
             </h2>
             <p className="text-sm text-gray-400 mt-1">
-              Full list of checked‑in participants
+              {filteredData.length === registrations.length
+                ? "Full list of checked‑in participants"
+                : `Filtered list (${filteredData.length} results)`}
             </p>
           </div>
 
@@ -133,14 +250,20 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          ) : registrations.length === 0 ? (
+          ) : filteredData.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-5xl mb-4">📭</div>
+              <div className="text-5xl mb-4">
+                {registrations.length === 0 ? "📭" : "🔍"}
+              </div>
               <h3 className="text-lg font-medium text-white">
-                No registrations yet
+                {registrations.length === 0
+                  ? "No registrations yet"
+                  : "No matching records"}
               </h3>
               <p className="text-sm text-gray-400 mt-1">
-                Once someone checks in, their details will appear here.
+                {registrations.length === 0
+                  ? "Once someone checks in, their details will appear here."
+                  : "Try adjusting your search or time filters."}
               </p>
             </div>
           ) : (
@@ -166,7 +289,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {registrations.map((reg, idx) => (
+                  {filteredData.map((reg, idx) => (
                     <tr
                       key={reg.id}
                       className="hover:bg-gray-700/50 transition-colors duration-150"
