@@ -7,7 +7,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <span className="text-2xl">📋</span>
             <span className="text-xl font-bold text-white">
-              RenTech Attendance
+              GenbaCheck Attendance
               <span className="hidden sm:inline text-sm font-normal text-gray-400 ml-2">
                 (demo, will add admin login later)
               </span>
@@ -192,7 +192,7 @@ export default function LandingPage() {
       <footer className="bg-gray-950 border-t border-gray-800 text-gray-500 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-sm">
-            © {new Date().getFullYear()} RenTech. Built with Next.js, Supabase
+            © {new Date().getFullYear()} Lorence Ojales. Built with Next.js, Supabase
             & ESP32.
           </p>
         </div>

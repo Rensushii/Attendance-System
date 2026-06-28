@@ -93,7 +93,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
               📋 <span>Attendance Dashboard</span>
               <span className="text-sm font-normal text-gray-500 ml-2">
-                by RenTech
+                by Lorence Ojales
               </span>
             </h1>
             <p className="text-sm text-gray-400 mt-1">
