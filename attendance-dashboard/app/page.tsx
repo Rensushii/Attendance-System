@@ -60,8 +60,13 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex justify-center">
-              <div className="relative w-full max-w-md aspect-square bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl border border-indigo-100 flex items-center justify-center">
-                <span className="text-8xl">📡</span>
+              {/* Replaced 📡 with image */}
+              <div className="relative w-full max-w-md">
+                <img
+                  src="/images/esp32.jpg"
+                  alt="ESP32 with OLED display showing QR code for attendance check-in"
+                  className="w-full h-auto object-cover rounded-2xl border border-indigo-100 shadow-lg"
+                />
                 <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-lg p-4 border border-gray-100">
                   <p className="text-sm font-semibold text-gray-900">ESP32 + OLED</p>
                   <p className="text-xs text-gray-500">QR code check‑in</p>
