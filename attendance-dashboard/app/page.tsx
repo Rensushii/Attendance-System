@@ -1,208 +1,169 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-interface Registration {
-  id: number;
-  name: string;
-  email: string;
-  mac: string;
-  created_at: string;
-}
-
-export default function Home() {
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-
-  const fetchData = async () => {
-    const { data, error } = await supabase
-      .from("registrations")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error && data) {
-      setRegistrations(data);
-      setLastFetched(new Date());
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              📋 <span>Attendance Dashboard</span>
-              <span className="text-sm font-normal text-gray-500 ml-2">by RenTech</span>
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">Real-time event check‑in monitoring</p>
-          </div>
-          {lastFetched && (
-            <span className="text-xs text-gray-400 mt-2 sm:mt-0">
-              Last updated: {lastFetched.toLocaleTimeString()}
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">📋</span>
+            <span className="text-xl font-bold text-gray-900">
+              RenTech Attendance
             </span>
-          )}
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <p className="text-sm font-medium text-gray-500">Total Registrations</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">
-              {loading ? "—" : registrations.length}
-            </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <p className="text-sm font-medium text-gray-500">Today</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">
-              {loading
-                ? "—"
-                : registrations.filter((r) => {
-                    const today = new Date();
-                    const regDate = new Date(r.created_at);
-                    return (
-                      regDate.getDate() === today.getDate() &&
-                      regDate.getMonth() === today.getMonth() &&
-                      regDate.getFullYear() === today.getFullYear()
-                    );
-                  }).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-            <p className="text-sm font-medium text-gray-500">Unique Devices</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">
-              {loading ? "—" : new Set(registrations.map((r) => r.mac)).size}
-            </p>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Registered Attendees</h2>
-            <p className="text-sm text-gray-500 mt-1">Full list of checked‑in participants</p>
-          </div>
-
-          {/* Loading skeleton */}
-          {loading ? (
-            <div className="p-6 space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="animate-pulse flex space-x-4">
-                  <div className="h-4 bg-gray-200 rounded w-8"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/5"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                </div>
-              ))}
-            </div>
-          ) : registrations.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-5xl mb-4">📭</div>
-              <h3 className="text-lg font-medium text-gray-900">No registrations yet</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Once someone checks in, their details will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      #
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      MAC Address
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Time
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {registrations.map((reg, idx) => (
-                    <tr
-                      key={reg.id}
-                      className="hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      <td className="px-4 py-3 text-sm text-gray-500 font-medium">
-                        {idx + 1}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {reg.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {reg.email}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 font-mono">
-                        {reg.mac}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                        {new Date(reg.created_at).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Download card */}
-        <div className="mt-10 bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center sm:text-left sm:flex sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">💻 Ready to deploy the offline check‑in system?</h3>
-            <p className="text-sm text-gray-500 mt-1 max-w-xl">
-              Download the one‑click installer for Windows. It automatically detects the ESP32, runs silently in the background, and syncs all data to this dashboard.
-            </p>
-          </div>
-          <div className="mt-4 sm:mt-0 sm:ml-6">
+          <div className="flex items-center gap-4">
+            <a
+              href="/dashboard"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+            >
+              Live Dashboard
+            </a>
             <a
               href="/attendance-laptop.zip"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
             >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              Download ESP32 System
+              Download System
             </a>
           </div>
         </div>
-      </main>
+      </nav>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 mb-6">
+                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                Offline-first technology
+              </div>
+              <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+                Check‑in that <span className="text-indigo-600">just works</span>
+              </h1>
+              <p className="mt-6 text-lg text-gray-600 max-w-xl">
+                Eliminate long lines, paper forms, and fake attendance.  
+                Our system uses a private Wi‑Fi QR code and captive portal to verify
+                physical presence — no link sharing, no internet required.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <a
+                  href="/dashboard"
+                  className="inline-flex items-center px-6 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
+                >
+                  View Live Dashboard →
+                </a>
+                <a
+                  href="/attendance-laptop.zip"
+                  className="inline-flex items-center px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition"
+                >
+                  Download for Windows
+                </a>
+              </div>
+            </div>
+            <div className="flex justify-center">
+              <div className="relative w-full max-w-md aspect-square bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl border border-indigo-100 flex items-center justify-center">
+                <span className="text-8xl">📡</span>
+                <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900">ESP32 + OLED</p>
+                  <p className="text-xs text-gray-500">QR code check‑in</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Problem / Solution */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900">Why current methods fail</h2>
+            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+              Traditional attendance systems suffer from two common problems that we&apos;ve completely eliminated.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="p-6 bg-red-50 rounded-xl border border-red-100">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">❌ Long registration lines</h3>
+              <p className="text-red-700 text-sm">
+                Paper forms and manual entry create bottlenecks. Even online forms require an internet connection
+                and often crash under load.
+              </p>
+            </div>
+            <div className="p-6 bg-red-50 rounded-xl border border-red-100">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">🔗 Link sharing / fake attendance</h3>
+              <p className="text-red-700 text-sm">
+                When registration links are sent online, students share them with friends who aren&apos;t in the room.
+                There&apos;s no way to prove physical presence.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900">How it works</h2>
+            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+              A seamless experience from arrival to cloud sync — completely offline for the attendee.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { step: "01", title: "Scan QR", desc: "Attendee scans the Wi‑Fi QR displayed on the OLED screen using their phone camera. No app needed." },
+              { step: "02", title: "Auto‑connect", desc: "Phone joins the ESP32’s private Wi‑Fi. A captive portal automatically opens the registration page." },
+              { step: "03", title: "Register", desc: "Attendee enters name & email. The ESP32 captures MAC address to prevent duplicate check‑ins." },
+              { step: "04", title: "Instant disconnect", desc: "After successful registration, the device is kicked off the Wi‑Fi, freeing the slot for the next person." },
+            ].map((item) => (
+              <div key={item.step} className="relative flex flex-col items-center text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg mb-4">
+                  {item.step}
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
+                <p className="text-sm text-gray-600">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features grid */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900">Why it&apos;s unique</h2>
+            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+              Designed to solve the real pain points of event organizers and educators.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: "📴", title: "100% Offline Registration", desc: "No internet access means the registration URL can't be shared outside the room. Physical presence is required." },
+              { icon: "🔒", title: "Automatic MAC Blacklist", desc: "Once a device registers, its MAC is stored. The same phone can't re‑register, preventing buddy punching." },
+              { icon: "☁️", title: "Cloud Sync & Dashboard", desc: "All data is instantly sent to a secure online dashboard, accessible from anywhere via Vercel." },
+              { icon: "⚡", title: "Plug & Play Setup", desc: "Pre‑flashed ESP32 and a single‑click installer for the laptop. No technical knowledge needed." },
+              { icon: "📱", title: "No App Installation", desc: "Attendees only need a phone camera. The captive portal works on any modern smartphone." },
+              { icon: "🔄", title: "Live Updates", desc: "The dashboard refreshes every 10 seconds, so you always see the latest check‑ins." },
+            ].map((feature, i) => (
+              <div key={i} className="p-6 bg-gray-50 rounded-xl hover:shadow-md transition-shadow duration-200">
+                <div className="text-3xl mb-4">{feature.icon}</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <p className="text-sm text-gray-600">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-sm">
+            © {new Date().getFullYear()} RenTech Attendance. Built with Next.js, Supabase & ESP32.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
