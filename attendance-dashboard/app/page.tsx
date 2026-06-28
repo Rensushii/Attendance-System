@@ -37,7 +37,7 @@ export default function Home() {
 
   return (
     <main className="p-8 font-sans">
-      <h1 className="text-3xl font-bold mb-4">📋 Event Attendance Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-4">📋 Event Attendance Dashboard by RenTech</h1>
       <p className="text-lg mb-6">Total registered: {registrations.length}</p>
       <table className="w-full border-collapse border border-gray-300">
         <thead>
