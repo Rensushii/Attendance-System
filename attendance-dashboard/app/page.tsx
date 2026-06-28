@@ -9,7 +9,7 @@ export default function LandingPage() {
             <span className="text-xl font-bold text-white">
               RenTech Attendance
               <span className="hidden sm:inline text-sm font-normal text-gray-400 ml-2">
-                (demo)
+                (demo, will add admin login later)
               </span>
             </span>
           </div>
